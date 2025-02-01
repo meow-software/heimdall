@@ -19,5 +19,5 @@ model User{
   email String @db.VarChar(255) @unique
   password String @db.VarChar(255)
   createdAt DateTime @default(now())
-  upadteAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, Req, Request, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { SignupDto } from './dto/signupDto';
 import { SigninDto } from './dto/signinDto';
 import { AuthService } from './auth.service';
@@ -6,7 +6,6 @@ import { ResetPasswordDemandDto } from './dto/resetPasswordDemandDto';
 import { ResetPasswordConfirmationDto } from './dto/resetPasswordConfirmationDto';
 import { DeleteAccounDto } from './dto/deleteAccounDto';
 
-import { MessagePattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
@@ -23,6 +22,20 @@ export class AuthController {
     async signin(@Body() signinDto: SigninDto) {
         return this.authService.signin(signinDto);
     }
+
+    @Post('refresh-token')
+    async refreshToken(@Request() req) {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            throw new UnauthorizedException("Invalid or missing token");
+        }
+
+        const oldToken = authHeader.split(' ')[1]; // Récupération du token après "Bearer"
+
+        return this.authService.refreshToken(oldToken);
+    }
+
 
     @Post('reset-password')
     async resetPasswordDemand(@Body() resetPasswordDemandDto: ResetPasswordDemandDto) {

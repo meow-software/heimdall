@@ -8,7 +8,7 @@ export class RedisClientService implements OnApplicationShutdown{
 
     constructor(private readonly configService: ConfigService) {
         const redisUrl = this.configService.get<string>('REDIS_URL', "");
-        // this.redis = new Redis(redisUrl);
+        this.redis = new Redis(redisUrl);
     }
 
     async isConnected(): Promise<boolean> {

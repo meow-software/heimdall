@@ -6,7 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MailerModule } from './mailer/mailer.module';
 
-import { RedisClientService } from './redis/redis-client/redis-client.service';
+import { RedisClientService } from './redis/redis-client/redis-client.service'; 
 dotenv.config(); 
 @Module({
   imports: [

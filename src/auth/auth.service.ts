@@ -12,21 +12,31 @@ import { ResetPasswordDemandDto } from './dto/resetPasswordDemandDto';
 import { ResetPasswordConfirmationDto } from './dto/resetPasswordConfirmationDto';
 import { DeleteAccounDto } from './dto/deleteAccounDto';
 import { RedisClientService } from 'src/redis/redis-client/redis-client.service';
+import { AuthDecodePayload, AuthPayload } from './jwt.interface';
 
 
 @Injectable()
 export class AuthService {
 
     private readonly REDIS_CACHE_USER_TOKEN = `USER:TOKENS:`;
+    private readonly ttl: number;
 
     constructor(
         private readonly prismaService: PrismaService,
         private readonly mailerService: MailerService,
-        private readonly JwtService: JwtService,
+        private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly redisClient: RedisClientService
 
-    ) { }
+    ) {
+        this.ttl = parseInt(this.configService.get("JWT_EXPIRES_IN", "3600"));
+    }
+
+    /**
+     * Registers a new user
+     * @param signupDto - User signup data
+     * @returns Confirmation message
+     */
     async signup(signupDto: SignupDto) {
         const { email, password, username } = signupDto;
         // Check if user is already registered
@@ -43,6 +53,11 @@ export class AuthService {
         return { data: `User successfully created` };
     }
 
+    /**
+     * Authenticates a user
+     * @param signinDto - User credentials
+     * @returns JWT token and user info
+     */
     async signin(signinDto: SigninDto) {
         const { email, password } = signinDto;
         // Check if user is already registered
@@ -54,20 +69,19 @@ export class AuthService {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return new UnauthorizedException("Password does not match");
         // Returns a jwt token
-        const payload = {
+        const payload: AuthPayload = {
             sub: user.userId,
+            userId: user.userId,
             email: user.email
         }
-        const ttl = this.configService.get("JWT_EXPIRES_IN");
-        const token = this.JwtService.sign(payload, {
-            expiresIn: ttl,
+        const token = this.jwtService.sign(payload, {
+            expiresIn: this.ttl,
             secret: this.configService.get("SECRET_KEY"),
         });
-
         // Add token in redis cache
         const redis = await this.redisClient.getIoRedis();
         await redis.sadd(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, token);
-        await redis.expire(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, ttl);
+        await redis.expire(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, this.ttl);
 
         return {
             token, user: {
@@ -77,8 +91,61 @@ export class AuthService {
         };
     }
 
+    /**
+     * Refreshes an expired JWT token
+     * @param oldToken - Expired JWT token
+     * @returns New JWT token
+     */
+    async refreshToken(oldToken: string) {
+        const redis = await this.redisClient.getIoRedis();
+
+        // Verify jwt
+        let decodePayload: AuthDecodePayload;
+        try {
+            decodePayload = this.jwtService.verify(oldToken, { ignoreExpiration: true }) as AuthDecodePayload;
+            if (!decodePayload) throw new UnauthorizedException("Invalid token");
+        } catch (error) {
+            throw new UnauthorizedException("Invalid token");
+        }
+
+        const redisKey = `${this.REDIS_CACHE_USER_TOKEN}${decodePayload.userId}`;
+
+        // Check expiration5 minutes
+        const currentTime = Math.floor(Date.now() / 1000); // 
+        if (decodePayload.exp < currentTime - 300) { // 300s = 5 minutes
+            throw new UnauthorizedException("The token has expired too long ago, login please.");
+        }
+
+        // We don't check if the user still exists, requests won't go through anyway
+
+        // Returns a jwt token
+        const payload: AuthPayload = {
+            sub: decodePayload.userId,
+            userId: decodePayload.userId,
+            email: decodePayload.email
+        }
+        // Generate new token jwt
+        const newToken = this.jwtService.sign(payload, {
+            expiresIn: this.ttl,
+            secret: this.configService.get("SECRET_KEY"),
+        });
+
+        // Update redis cash token
+        await redis.srem(redisKey, oldToken);
+        await redis.sadd(redisKey, newToken);
+        await redis.expire(redisKey, this.ttl);
+
+        return { token: newToken };
+    }
+
+
+    /**
+     * Initiates a password reset process
+     * @param resetPasswordDemandDto - User email for password reset
+     * @returns Confirmation message
+     */
     async resetPasswordDemand(resetPasswordDemandDto: ResetPasswordDemandDto) {
-        const { email, password } = resetPasswordDemandDto;
+        const { email } = resetPasswordDemandDto;
         const user = await this.prismaService.user.findUnique({ where: { email } });
         if (!user) return new NotFoundException("User not found");
         const code = speakeasy.totp({
@@ -92,6 +159,11 @@ export class AuthService {
         return { data: "Reset password mail has been sent" };
     }
 
+    /**
+     * Confirms a password reset
+     * @param resetPasswordConfirmationDto - Password reset data
+     * @returns Confirmation message
+     */
     async resetPasswordConfirmation(resetPasswordConfirmationDto: ResetPasswordConfirmationDto) {
         const { code, email, password } = resetPasswordConfirmationDto;
         const user = await this.prismaService.user.findUnique({ where: { email } });
@@ -120,6 +192,12 @@ export class AuthService {
         await this.prismaService.user.delete({
             where: { userId }
         });
+
+        // Add token in redis cache
+        const redis = await this.redisClient.getIoRedis();
+        await redis.srem(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`);
+        // Emit event user deleted
+        // Todo
         return { data: "User successfully deleted" };
     }
 
@@ -129,16 +207,15 @@ export class AuthService {
 
     async getUserInfo(userId: number) {
         const user = await this.prismaService.user.findUnique({
-            where: { userId: userId }, 
-            select: { 
+            where: { userId: userId },
+            select: {
                 userId: true,
                 email: true,
                 username: true,
             }
         });
 
-        if (!user)  throw new NotFoundException('User not found'); 
-        
-        return user; 
+        if (!user) throw new NotFoundException('User not found');
+        return user;
     }
 } 
