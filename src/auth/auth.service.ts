@@ -19,7 +19,8 @@ import { AuthDecodePayload, AuthPayload } from './jwt.interface';
 export class AuthService {
 
     private readonly REDIS_CACHE_USER_TOKEN = `USER:TOKENS:`;
-    private readonly ttl: number;
+    private readonly TTL: number;
+    private readonly JWT_SECRET_KEY;
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -29,7 +30,8 @@ export class AuthService {
         private readonly redisClient: RedisClientService
 
     ) {
-        this.ttl = parseInt(this.configService.get("JWT_EXPIRES_IN", "3600"));
+        this.TTL = parseInt(this.configService.get("JWT_EXPIRES_IN", "3600"));
+        this.JWT_SECRET_KEY  = this.configService.get("SECRET_KEY");
     }
 
     /**
@@ -75,13 +77,13 @@ export class AuthService {
             email: user.email
         }
         const token = this.jwtService.sign(payload, {
-            expiresIn: this.ttl,
-            secret: this.configService.get("SECRET_KEY"),
+            expiresIn: this.TTL,
+            secret: this.JWT_SECRET_KEY,
         });
         // Add token in redis cache
         const redis = await this.redisClient.getIoRedis();
         await redis.sadd(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, token);
-        await redis.expire(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, this.ttl);
+        await redis.expire(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, this.TTL);
 
         return {
             token, user: {
@@ -97,12 +99,14 @@ export class AuthService {
      * @returns New JWT token
      */
     async refreshToken(oldToken: string) {
-        const redis = await this.redisClient.getIoRedis();
-
+        const redis = await this.redisClient.getIoRedis(); 
         // Verify jwt
         let decodePayload: AuthDecodePayload;
         try {
-            decodePayload = this.jwtService.verify(oldToken, { ignoreExpiration: true }) as AuthDecodePayload;
+            decodePayload = this.jwtService.verify(oldToken, {
+                ignoreExpiration: true, 
+                secret: this.JWT_SECRET_KEY
+            }) as AuthDecodePayload; 
             if (!decodePayload) throw new UnauthorizedException("Invalid token");
         } catch (error) {
             throw new UnauthorizedException("Invalid token");
@@ -111,7 +115,7 @@ export class AuthService {
         const redisKey = `${this.REDIS_CACHE_USER_TOKEN}${decodePayload.userId}`;
 
         // Check expiration5 minutes
-        const currentTime = Math.floor(Date.now() / 1000); // 
+        const currentTime = Math.floor(Date.now() / 1000); 
         if (decodePayload.exp < currentTime - 300) { // 300s = 5 minutes
             throw new UnauthorizedException("The token has expired too long ago, login please.");
         }
@@ -126,16 +130,16 @@ export class AuthService {
         }
         // Generate new token jwt
         const newToken = this.jwtService.sign(payload, {
-            expiresIn: this.ttl,
-            secret: this.configService.get("SECRET_KEY"),
+            expiresIn: this.TTL,
+            secret: this.JWT_SECRET_KEY,
         });
 
         // Update redis cash token
         await redis.srem(redisKey, oldToken);
         await redis.sadd(redisKey, newToken);
-        await redis.expire(redisKey, this.ttl);
+        await redis.expire(redisKey, this.TTL);
 
-        return { token: newToken };
+        return { refreshToken : newToken };
     }
 
 

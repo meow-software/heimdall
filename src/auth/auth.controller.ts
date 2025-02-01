@@ -31,7 +31,7 @@ export class AuthController {
             throw new UnauthorizedException("Invalid or missing token");
         }
 
-        const oldToken = authHeader.split(' ')[1]; // Récupération du token après "Bearer"
+        const oldToken = authHeader.split(' ')[1]; // Bearer key
 
         return this.authService.refreshToken(oldToken);
     }
