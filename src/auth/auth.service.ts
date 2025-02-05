@@ -158,7 +158,7 @@ export class AuthService {
             step: this.configService.get("OTP_STEP_TIME"), // Time step in seconds
             encoding: "base32",
         });
-        const url = `${this.configService.get("HOST")}:${this.configService.get("API_GATEWAY_PORT")}/auth/reset-password-confirmation`;
+        const url = `${this.configService.get("HOST")}:${this.configService.get("HEIMDALL_SERVICE_API_GATEWAY_PORT")}/auth/reset-password-confirmation`;
         await this.mailerService.sendResetPassword(email, url, code);
         return { data: "Reset password mail has been sent" };
     }
