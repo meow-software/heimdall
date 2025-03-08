@@ -1,18 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConflictException, NotFoundException, UnauthorizedException } from "@nestjs/common/exceptions";
-import { SignupDto } from './dto/signupDto';
-import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from "bcrypt";
 import * as speakeasy from "speakeasy";
 import { JwtService } from '@nestjs/jwt';
-import { MailerService } from 'src/mailer/mailer.service';
-import { SigninDto } from './dto/signinDto';
 import { ConfigService } from '@nestjs/config';
-import { ResetPasswordDemandDto } from './dto/resetPasswordDemandDto';
-import { ResetPasswordConfirmationDto } from './dto/resetPasswordConfirmationDto';
-import { DeleteAccounDto } from './dto/deleteAccounDto';
-import { RedisClientService } from 'src/redis/redis-client/redis-client.service';
-import { AuthDecodePayload, AuthPayload } from './jwt.interface';
+
+import { AuthDecodePayload, AuthPayload, MailerService, PrismaService , RedisClientService} from '@tellme/common';
+import { DeleteAccounDto, RedisCacheKey, ResetPasswordConfirmationDto, ResetPasswordDemandDto, SigninDto, SignupDto } from '@tellme/shared';
 
 
 @Injectable()
@@ -82,8 +76,8 @@ export class AuthService {
         });
         // Add token in redis cache
         const redis = await this.redisClient.getIoRedis();
-        await redis.sadd(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, token);
-        await redis.expire(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`, this.TTL);
+        await redis.sadd(RedisCacheKey.getUserToken(user.userId), token);
+        await redis.expire(RedisCacheKey.getUserToken(user.userId), this.TTL);
 
         return {
             token, user: {
@@ -199,7 +193,7 @@ export class AuthService {
 
         // Add token in redis cache
         const redis = await this.redisClient.getIoRedis();
-        await redis.srem(`${this.REDIS_CACHE_USER_TOKEN}${user.userId}`);
+        await redis.srem(RedisCacheKey.getUserToken(user.userId));
         // Emit event user deleted
         // Todo
         return { data: "User successfully deleted" };

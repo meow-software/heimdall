@@ -1,12 +1,8 @@
 import { Body, Controller, Delete, Get, Post, Req, Request, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { SignupDto } from './dto/signupDto';
-import { SigninDto } from './dto/signinDto';
 import { AuthService } from './auth.service';
-import { ResetPasswordDemandDto } from './dto/resetPasswordDemandDto';
-import { ResetPasswordConfirmationDto } from './dto/resetPasswordConfirmationDto';
-import { DeleteAccounDto } from './dto/deleteAccounDto';
 
 import { AuthGuard } from '@nestjs/passport';
+import { DeleteAccounDto, ResetPasswordConfirmationDto, ResetPasswordDemandDto, SigninDto, SignupDto } from '@tellme/shared';
 
 @Controller('auth')
 export class AuthController {

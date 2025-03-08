@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './strategy.service';
 import { JwtModule } from '@nestjs/jwt';
-import { RedisClientService } from 'src/redis/redis-client/redis-client.service';
 
-@Module({
-  imports : [JwtModule.register({})],
+import { CommonModule, JwtStrategy, MailerService } from '@tellme/common';
+
+@Module({ 
+  imports : [JwtModule.register({}), CommonModule], 
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RedisClientService]
+  providers: [AuthService, JwtStrategy, MailerService]
 })
 export class AuthModule {}
