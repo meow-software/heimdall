@@ -3,11 +3,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 
-import { CommonModule, JwtStrategy, MailerService } from '@tellme/common';
+import { CommonModule, JwtStrategy, MailerService, SnowflakeGenerator, SnowflakeService } from '@tellme/common';
+import { RedisModule, RepositoryModule } from '@tellme/shared';
 
 @Module({ 
-  imports : [JwtModule.register({}), CommonModule], 
+  imports : [JwtModule.register({}), CommonModule, RedisModule, RepositoryModule], 
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, MailerService]
+  providers: [AuthService, JwtStrategy, MailerService, SnowflakeService]
 })
 export class AuthModule {}
