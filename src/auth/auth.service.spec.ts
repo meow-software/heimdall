@@ -45,6 +45,7 @@ describe('AuthService', () => {
   
   const signupDto = { email: 'test@example.com', password: 'password123', username: 'testuser' };
   const signinDto = { email: 'test@example.com', password: 'password123' };
+  const userId = "123456789";
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -301,7 +302,6 @@ describe('AuthService', () => {
     const password = signinDto.password;
     const code = '12345';
     const dto = { email, password, code };
-    const userId = "2145125412511544"
 
     it('should return confirmation message if code is valid and user exists', async () => {
       const mockUser = {
@@ -365,7 +365,6 @@ describe('AuthService', () => {
   });
 
   describe('AuthService - deleteAccount', () => {
-    const userId = 1;
     const password = 'correctPassword';
     const dto = { password };
 
@@ -413,7 +412,6 @@ describe('AuthService', () => {
 
   describe('AuthService - getUserInfo', () => {
     it('should return user info if the user exists', async () => {
-      const userId = 1;
       const mockUser = {
         userId,
         email: signinDto.email,
@@ -433,7 +431,6 @@ describe('AuthService', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-      const userId = 1; // Todo : utiliser un id de type Snowflake
 
       mockUserRepository.findUnique.mockResolvedValue(null); 
 

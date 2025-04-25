@@ -190,7 +190,7 @@ export class AuthService {
         return { data: "Password updated" };
     }
 
-    async deleteAccount(userId: number, deleteAccounDto: DeleteAccounDto) {
+    async deleteAccount(userId: string, deleteAccounDto: DeleteAccounDto) {
         const { password } = deleteAccounDto;
         const user = await this.UserRepository.findUnique({ where: { id: userId } });
         if (!user) return new NotFoundException("User not found");
@@ -218,7 +218,7 @@ export class AuthService {
         // return await this.prismaService.user.findUnique({ where: { email: email } });
     }
 
-    async getUserInfo(userId: number) {
+    async getUserInfo(userId: string) {
         const user = await this.UserRepository.findUnique({
             where: { userId: userId },
             select: {
