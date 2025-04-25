@@ -24,7 +24,7 @@ export class AuthController {
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw new UnauthorizedException("Invalid or missing token");
+            return new UnauthorizedException("Invalid or missing token");
         }
 
         const oldToken = authHeader.split(' ')[1]; // Bearer key

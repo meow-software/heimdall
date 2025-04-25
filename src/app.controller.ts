@@ -5,6 +5,6 @@ export class AppController {
   constructor() {}
   @Get("ping")
   ping() {
-    return "Pong";
+    return "Pong!";
   }
 }

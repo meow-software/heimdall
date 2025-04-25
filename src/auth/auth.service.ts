@@ -60,7 +60,7 @@ export class AuthService {
         const { email, password } = signinDto;
         // Check if user is already registered
         // const user = await this.prismaService.user.findUnique({
-        //     where: { email }
+        //     where: { email } 
         // });
         
         const user = await this.UserRepository.findUnique({ where: { email } });
@@ -108,7 +108,7 @@ export class AuthService {
             }) as AuthDecodePayload; 
             if (!decodePayload) throw new UnauthorizedException("Invalid token");
         } catch (error) {
-            throw new UnauthorizedException("Invalid token");
+            return new UnauthorizedException("Invalid token");
         }
 
         // const redisKey =  RedisCacheKey.getUserToken(decodePayload.userId);
@@ -116,7 +116,7 @@ export class AuthService {
         // Check expiration5 minutes
         const currentTime = Math.floor(Date.now() / 1000); 
         if (decodePayload.exp < currentTime - 300) { // 300s = 5 minutes
-            throw new UnauthorizedException("The token has expired too long ago, login please.");
+            return new UnauthorizedException("The token has expired too long ago, login please.");
         }
 
         // We don't check if the user still exists, requests won't go through anyway
