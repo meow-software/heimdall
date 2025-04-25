@@ -433,7 +433,7 @@ describe('AuthService', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-      const userId = 1;
+      const userId = 1; // Todo : utiliser un id de type Snowflake
 
       mockUserRepository.findUnique.mockResolvedValue(null); 
 
