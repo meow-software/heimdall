@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { JwtStrategy } from '@tellme/common';
 import { AppModule } from 'src/app.module';
 import { AuthService } from 'src/auth/auth.service';
+import { DeleteAccounDto, ResetPasswordConfirmationDto, ResetPasswordDemandDto } from '@tellme/shared';
 describe('AuthController', () => {
   let app: INestApplication;
 
@@ -18,6 +19,27 @@ describe('AuthController', () => {
     refreshToken: jest.fn(),
   };
   const url = '/auth/'; // Base URL for the auth routes
+  
+
+  const signupDto = {
+    email: 'test@example.com',
+    username: 'testuser',
+    password: 'password123',
+  };
+  
+  const signinDto = { email: 'test@example.com', password: 'password123' };
+  
+  const resetPasswordDemandDto : ResetPasswordDemandDto = { email: 'test@example.com' };
+
+  const resetPasswordConfirmationDto : ResetPasswordConfirmationDto = {
+    email: 'test@example.com',
+    code: '12345',
+    password: 'newpassword123',
+  };
+  
+  const deleteAccountDto : DeleteAccounDto = { password: 'password123' };
+  
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule], // Use the root module for full application testing
@@ -37,14 +59,8 @@ describe('AuthController', () => {
   afterAll(async () => {
     await app.close(); 
   });
-  
-  it('should register a new user (POST /auth/register)', async () => {
-    const signupDto = {
-      email: 'test@example.com',
-      username: 'testuser',
-      password: 'password123',
-    };
 
+  it('should register a new user (POST /auth/register)', async () => {
     // Mock the signup method of the service
     authServiceMock.signup.mockResolvedValue({ data: 'User registered' });
 
@@ -58,8 +74,6 @@ describe('AuthController', () => {
   });
 
   it('should login an existing user (POST /auth/login)', async () => {
-    const signinDto = { email: 'test@example.com', password: 'password123' };
-
     // Mock the signin method of the service
     authServiceMock.signin.mockResolvedValue({ token: 'jwt-token' });
 
@@ -73,8 +87,6 @@ describe('AuthController', () => {
   });
 
   it('should request password reset (POST /auth/reset-password)', async () => {
-    const resetPasswordDemandDto = { email: 'test@example.com' };
-
     // Mock the reset password demand method of the service
     authServiceMock.resetPasswordDemand.mockResolvedValue({ data: 'Reset password mail has been sent' });
 
@@ -88,12 +100,6 @@ describe('AuthController', () => {
   });
 
   it('should confirm password reset (POST /auth/reset-password-confirmation)', async () => {
-    const resetPasswordConfirmationDto = {
-      email: 'test@example.com',
-      code: '12345',
-      password: 'newpassword123',
-    };
-
     // Mock the reset password confirmation method of the service
     authServiceMock.resetPasswordConfirmation.mockResolvedValue({ data: 'Password updated' });
 
@@ -107,8 +113,6 @@ describe('AuthController', () => {
   });
 
   it('should delete user account (DELETE /auth/delete-account)', async () => {
-    const deleteAccountDto = { password: 'password123' };
-
     // Mock the delete account method of the service
     authServiceMock.deleteAccount.mockResolvedValue({ data: 'User successfully deleted' });
 
@@ -128,8 +132,6 @@ describe('AuthController', () => {
   });
 
   it('should return 401 when trying to delete account with invalid token', async () => {
-    const deleteAccountDto = { password: 'password123' };
-  
     authServiceMock.deleteAccount.mockResolvedValue({ data: 'User successfully deleted' });
   
     // Test with an invalid token (or without token)
@@ -141,5 +143,4 @@ describe('AuthController', () => {
   
     expect(response.body).toEqual({ message: 'Unauthorized' , "statusCode": 401}); // Or any custom error message you have
   });
-  
 });

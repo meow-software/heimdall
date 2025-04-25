@@ -42,6 +42,9 @@ describe('AuthService', () => {
   const mockAuthCacheService = { storeToken: jest.fn(), updateToken: jest.fn(), removeAllToken: jest.fn() };
   const mockUserRepository = { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() };
   const mockSnowflakeService = { generate: jest.fn().mockReturnValue('123456') };
+  
+  const signupDto = { email: 'test@example.com', password: 'password123', username: 'testuser' };
+  const signinDto = { email: 'test@example.com', password: 'password123' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -67,7 +70,7 @@ describe('AuthService', () => {
 
   describe('AuthService - signup', () => {
     it('should create a new user and send a confirmation email', async () => {
-      const signupDto = { email: 'test@example.com', password: 'password123', username: 'testuser' };
+      
       const mockUser = {
         email: signupDto.email,
         username: signupDto.username,
@@ -92,7 +95,7 @@ describe('AuthService', () => {
     });
 
     it('should throw a ConflictException if the user already exists', async () => {
-      const signupDto = { email: 'test@example.com', password: 'password123', username: 'testuser' };
+      
       const mockUser = {
         email: signupDto.email,
         username: signupDto.username,
@@ -113,7 +116,7 @@ describe('AuthService', () => {
 
   describe('AuthService - signin', () => {
     it('should return a token and user info if credentials are correct', async () => {
-      const signinDto = { email: 'test@example.com', password: 'password123' };
+      
       const mockUser = {
         id: '123456',
         email: signinDto.email,
@@ -148,7 +151,6 @@ describe('AuthService', () => {
     });
 
     it('should return a NotFoundException if the user does not exist', async () => {
-      const signinDto = { email: 'nonexistent@example.com', password: 'password123' };
       mockUserRepository.findUnique.mockResolvedValue(null); // User does not exist
 
       const result = await service.signin(signinDto);
@@ -158,7 +160,6 @@ describe('AuthService', () => {
     });
 
     it('should return an UnauthorizedException if the password does not match', async () => {
-      const signinDto = { email: 'test@example.com', password: 'wrongpassword' };
       const mockUser = {
         id: '123456',
         email: signinDto.email,
@@ -279,7 +280,7 @@ describe('AuthService', () => {
     });
 
     it('should return NotFoundException if user is not found', async () => {
-      const email = 'unknown@example.com';
+      const email = signinDto.email;
       const dto = { email };
 
       mockUserRepository.findUnique.mockResolvedValue(null);
@@ -296,14 +297,15 @@ describe('AuthService', () => {
   });
 
   describe('AuthService - resetPasswordConfirmation', () => {
-    const email = 'test@example.com';
-    const password = 'newPassword123';
+    const email = signinDto.email;
+    const password = signinDto.password;
     const code = '12345';
     const dto = { email, password, code };
+    const userId = "2145125412511544"
 
     it('should return confirmation message if code is valid and user exists', async () => {
       const mockUser = {
-        id: 'user123',
+        id: userId,
         email,
         editPassword: jest.fn(),
         password: 'hashedPassword',
@@ -345,7 +347,7 @@ describe('AuthService', () => {
 
     it('should return UnauthorizedException if the code is invalid', async () => {
       const mockUser = {
-        id: 'user123',
+        id: userId,
         email,
         editPassword: jest.fn(),
         password: 'hashedPassword',
@@ -414,7 +416,7 @@ describe('AuthService', () => {
       const userId = 1;
       const mockUser = {
         userId,
-        email: 'user@example.com',
+        email: signinDto.email,
         username: 'user1',
       };
 
