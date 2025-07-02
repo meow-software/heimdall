@@ -34,18 +34,11 @@ export class AuthService {
     async signup(signupDto: SignupDto) {
         const { email, password, username } = signupDto;
         // Check if user is already registered
-        // const user = await this.prismaService.user.findUnique({ where: { email } });
         let user = await this.UserRepository.findUnique({ where: { email } });
         if (user) return new ConflictException("User already exists");
-        // Hash the password
-        // const hash = await bcrypt.hash(password, 10);
         // Register user
-        // TODO : REPOSITORY USER 
         user = await UserEntity.new(this.snowflakeService, username, email, password);
         await this.UserRepository.create(user);
-        // await this.prismaService.user.create({
-        //     data: { email, username, password: hash }
-        // });
         // Send a confirmation email
         await this.mailerService.sendSignupConfirmation(email);
         return { data: `User successfully created` };
@@ -59,10 +52,6 @@ export class AuthService {
     async signin(signinDto: SigninDto) {
         const { email, password } = signinDto;
         // Check if user is already registered
-        // const user = await this.prismaService.user.findUnique({
-        //     where: { email } 
-        // });
-        
         const user = await this.UserRepository.findUnique({ where: { email } });
         if (!user) return new NotFoundException("User not found");
         // Compare password
@@ -79,9 +68,6 @@ export class AuthService {
             secret: this.JWT_SECRET_KEY,
         });
         // Add token in redis cache
-        // const redis = await this.redisClient.getIoRedis();
-        // await redis.sadd(RedisCacheKey.getUserToken(user.id), token);
-        // await redis.expire(RedisCacheKey.getUserToken(user.id), this.TTL);
         this.authCacheService.storeToken(user.id, token);
 
         return {
@@ -98,7 +84,7 @@ export class AuthService {
      * @returns New JWT token
      */
     async refreshToken(oldToken: string) {
-        // const redis = await this.redisClient.getIoRedis(); 
+        
         // Verify jwt
         let decodePayload: AuthDecodePayload;
         try {
@@ -110,8 +96,8 @@ export class AuthService {
         } catch (error) {
             return new UnauthorizedException("Invalid token");
         }
-
-        // const redisKey =  RedisCacheKey.getUserToken(decodePayload.userId);
+        // No need to check if the JWT token is stored in Redis — it most likely expired.
+        // We already verify that it was properly signed by us, which makes it legitimate.
 
         // Check expiration5 minutes
         const currentTime = Math.floor(Date.now() / 1000); 
@@ -127,6 +113,7 @@ export class AuthService {
             userId: decodePayload.userId,
             email: decodePayload.email
         }
+
         // Generate new token jwt
         const newToken = this.jwtService.sign(payload, {
             expiresIn: this.TTL,
@@ -134,12 +121,8 @@ export class AuthService {
         });
 
         // Update redis cash token
-        // await redis.srem(redisKey, oldToken);
-        // await redis.sadd(redisKey, newToken);
-        // await redis.expire(redisKey, this.TTL);
         
         this.authCacheService.updateToken(decodePayload.userId, oldToken, newToken);
-
 
         return { refreshToken : newToken };
     }
@@ -184,9 +167,6 @@ export class AuthService {
         if (!match) return new UnauthorizedException("Invalid/expired token");
         user.editPassword(password);
         await this.UserRepository.update(user.id, {password : user.password});
-        // await this.prismaService.user.update({
-        //     where: { email }, data: { password: hash }
-        // });
         return { data: "Password updated" };
     }
 
@@ -198,14 +178,6 @@ export class AuthService {
         if (!match) return new UnauthorizedException("Password does not match");
         
         await this.UserRepository.delete(user.id);
-        // await this.prismaService.user.delete({
-        //     where: { userId }
-        // });
-
-        // Add token in redis cache
-        // const redis = await this.redisClient.getIoRedis();
-        // await redis.srem(RedisCacheKey.getUserToken(user.id));
-        
         this.authCacheService.removeAllToken(user.id);
 
         // Emit event user deleted
@@ -215,7 +187,6 @@ export class AuthService {
 
     async validateUser(email: string) {
         return await this.UserRepository.findUnique({ where: { email: email } });
-        // return await this.prismaService.user.findUnique({ where: { email: email } });
     }
 
     async getUserInfo(userId: string) {
