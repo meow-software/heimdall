@@ -120,11 +120,7 @@ describe('AuthController', () => {
       .delete(url + 'delete-account')
       .set('Authorization', 'Bearer valid-jwt-token') // Simulate a valid JWT token
       .send(deleteAccountDto)
-      .expect(401);
-
-    // Todo: Generer dynamiquement un token et l'envoyer dans le header
-    // expect(response.body).toEqual({ data: 'User successfully deleted' });
-    // expect(authServiceMock.deleteAccount).toHaveBeenCalled();
+      .expect(401); // Expecting a 401 error since we are not actually sending a valid token in this test
   });
 
   afterAll(async () => {

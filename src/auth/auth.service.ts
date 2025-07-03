@@ -190,10 +190,11 @@ export class AuthService {
     }
 
     async getUserInfo(userId: string) {
+        console.log("getUserInfo", userId);
         const user = await this.UserRepository.findUnique({
-            where: { userId: userId },
+            where: { id: userId },
             select: {
-                userId: true,
+                id: true,
                 email: true,
                 username: true,
             }
