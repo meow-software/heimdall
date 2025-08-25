@@ -28,7 +28,6 @@ export class AllExceptionsFilter<T> implements ExceptionFilter {
         const r = res as any;
         message = r.message || exception.message || 'Error';
 
-        // Exemple pour validation errors de class-validator
         if (Array.isArray(r.message)) {
           errors = r.message.map((msg: string) => ({
             type: exception.name,

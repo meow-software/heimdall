@@ -143,7 +143,6 @@ export class ProxyController {
                 },
             },
         };
-        
         createProxyMiddleware(proxyOptions)(req, res, next);
     }
 

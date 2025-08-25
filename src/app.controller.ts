@@ -3,16 +3,13 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   @Get("/")
-  heimdall(): string {
-    return `
-    I am the trumpet that gives warning. Before access to Tellme is granted, 
-    your worth shall be judged. None may enter the Realm until their Identity 
-    has been verified and their Right of Passage established. The road ahead 
-    is a privilege, not a given.
-    `;
+  heimdall() {
+    return {
+      'Heimdall': `I am the trumpet that gives warning. Before access to Tellme is granted, your worth shall be judged. None may enter the Realm until their Identity has been verified and their Right of Passage established. The road ahead is a privilege, not a given.`
+    }
   }
 
   @Get("/ping")
@@ -21,7 +18,7 @@ export class AppController {
   }
 
   @Get("/health")
-  health() : any{
+  health(): any {
     return this.appService.health();
   }
 
