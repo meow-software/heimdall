@@ -136,8 +136,8 @@ export class ProxyController {
             },
         };
 
-        // Proxy execution (currently commented out, left here as reference)
-        // return createProxyMiddleware(proxyOptions)(req, res, next);
+        // Proxy execution 
+        return createProxyMiddleware(proxyOptions)(req, res, next);
     }
 
     /**
