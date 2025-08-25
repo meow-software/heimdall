@@ -6,6 +6,7 @@ import { ProxyController } from './controllers/proxy.controller';
 import { DynamicRateLimitGuard } from './guards/dynamic-rate-limit.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AdminGuard } from './guards/role.guard';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { AdminGuard } from './guards/role.guard';
     AppService, 
     JwtAuthGuard,
     AdminGuard,
-    DynamicRateLimitGuard
+    DynamicRateLimitGuard,
+    RedisService
   ],
 })
 export class AppModule {}
