@@ -58,7 +58,7 @@ export class ProxyController {
         private readonly dynamicRlGuard: DynamicRateLimitGuard,
     ) {
         // Compile the routes from configuration for efficient matching
-        this.compiled = compileRoutes(routes, false);
+        this.compiled = compileRoutes(routes, !!parseInt(process.env.COMPILE_ROUTE_VERBOSE ?? '0'),  !!parseInt(process.env.COMPILE_ROUTE_MUTE ?? '1'));
     }
 
     /**
