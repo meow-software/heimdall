@@ -18,6 +18,7 @@ import { match as pathMatch, compile as pathCompile } from 'path-to-regexp';
 import { DynamicRateLimitGuard } from '../guards/dynamic-rate-limit.guard';
 import { ModuleRef } from '@nestjs/core';
 import { compileRoutes, GuardClass, RouteConfig, RouteGuardType } from 'src/routes/routes';
+import logger from 'src/logger/logger';
 
 type CompiledRoute = {
     config: RouteConfig;
@@ -58,7 +59,7 @@ export class ProxyController {
         private readonly dynamicRlGuard: DynamicRateLimitGuard,
     ) {
         // Compile the routes from configuration for efficient matching
-        this.compiled = compileRoutes(routes, !!parseInt(process.env.COMPILE_ROUTE_VERBOSE ?? '0'),  !!parseInt(process.env.COMPILE_ROUTE_MUTE ?? '1'));
+        this.compiled = compileRoutes(routes, !!parseInt(process.env.COMPILE_ROUTE_VERBOSE ?? '0'), !!parseInt(process.env.COMPILE_ROUTE_MUTE ?? '1'));
     }
 
     /**
@@ -81,6 +82,7 @@ export class ProxyController {
         const incomingPath = req.path.replace(/^\/api/, '') || '/';
         const incomingMethod = req.method.toUpperCase();
 
+        console.log("----la", incomingPath)
         // Find a matching route (by method + path)
         const found = this.compiled.find(
             (c) => c.config.method === incomingMethod && !!c.matchFn(incomingPath)
@@ -127,17 +129,22 @@ export class ProxyController {
             changeOrigin: true,
             pathRewrite: (path: string, req: any) => {
                 const qs = req.url && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+                console.log("--path", `${pathname}${qs}`);
                 return `${pathname}${qs}`;
             },
             on: {
                 proxyReq: (proxyReq: any) => {
                     proxyReq.removeHeader('host');
                 },
+                error: (err, req, res) => {
+                    logger.error('Proxy error: ' + err.message);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
+                },
             },
         };
-
-        // Proxy execution 
-        return createProxyMiddleware(proxyOptions)(req, res, next);
+        
+        createProxyMiddleware(proxyOptions)(req, res, next);
     }
 
     /**
@@ -156,7 +163,7 @@ export class ProxyController {
                 switchToHttp: () => ({
                     getRequest: () => req,
                     getResponse: () => res,
-                    getNext: () => () => {},
+                    getNext: () => () => { },
                 }),
             } as any);
 

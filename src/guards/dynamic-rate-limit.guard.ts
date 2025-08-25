@@ -124,7 +124,7 @@ export class DynamicRateLimitGuard implements CanActivate {
     };
 
     const { blocked, count, expiresAt } = result;
-    console.log("Rate limit check:", blocked, count, expiresAt);
+    // console.log("Rate limit check:", blocked, count, expiresAt);
 
     // If blocked, throw HTTP 429 (Too Many Requests)
     if (blocked) {
