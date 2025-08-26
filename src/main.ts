@@ -12,6 +12,6 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.HEIMDALL_PORT ?? 3000);
 }
 bootstrap();
