@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { ResponseUtil } from 'src/lib/utils/response.util';
 
 
 @Injectable()
@@ -15,16 +16,18 @@ export class ResponseInterceptor implements NestInterceptor {
     const res = ctx.getResponse();
     const req = ctx.getRequest();
 
+
     return next.handle().pipe(
-      map((data) => ({
-        statusCode: res.statusCode,
-        success: res.statusCode >= 200 && res.statusCode < 300,
-        message: data?.message || 'OK',
-        data: data?.payload ?? data ?? {},
-        errors: [],
-        timestamp: new Date().toISOString(),
-        path: req.originalUrl,
-      })),
-    );
+      // Format success responses
+      map((data) =>
+        ResponseUtil.catch<any>(
+          {
+            data: data?.payload ?? data ?? {},
+            message: data?.message || 'OK',
+          },
+          req.originalUrl,
+        ),
+      ),
+    )
   }
 }
