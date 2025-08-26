@@ -1,6 +1,6 @@
+import { JwtAuthGuard } from "src/auth/jwt/jwt-auth.guard";
 import { RouteConfig } from "./routes";
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { AdminGuard } from '../guards/role.guard';
+import { AdminGuard } from "src/auth/guards/admin.guard";
 
 const AUTH_SERVICE_HOST = 'http://auth-service:3001';
 const PROJECT_SERVICE_HOST = 'http://project-service:3002';
@@ -42,7 +42,7 @@ export const routes: RouteConfig[] = [
       host: PROJECT_SERVICE_HOST,
       path: '/projects/:id'
     },
-    guards: [JwtAuthGuard], 
+    guards: [JwtAuthGuard, AdminGuard], 
     rateLimit: { limit: 120, ttl: 60, keyBy: 'user' } 
   },
   { 
@@ -52,7 +52,7 @@ export const routes: RouteConfig[] = [
       host: ADMIN_SERVICE_HOST,
       path: '/stats'
     },
-    guards: [JwtAuthGuard, new AdminGuard()], 
+    guards: [AdminGuard],
     rateLimit: { limit: 600, ttl: 60, keyBy: 'user' } 
   },
 ];
