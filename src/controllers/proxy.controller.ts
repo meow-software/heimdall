@@ -82,7 +82,6 @@ export class ProxyController {
         const incomingPath = req.path.replace(/^\/api/, '') || '/';
         const incomingMethod = req.method.toUpperCase();
 
-        console.log("----la", incomingPath)
         // Find a matching route (by method + path)
         const found = this.compiled.find(
             (c) => c.config.method === incomingMethod && !!c.matchFn(incomingPath)
@@ -129,7 +128,6 @@ export class ProxyController {
             changeOrigin: true,
             pathRewrite: (path: string, req: any) => {
                 const qs = req.url && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-                console.log("--path", `${pathname}${qs}`);
                 return `${pathname}${qs}`;
             },
             on: {
