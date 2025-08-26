@@ -8,13 +8,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private redis: Redis;
 
   constructor() {
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST ,
-      username: process.env.REDIS_USERNAME,
-      port: parseInt(process.env.REDIS_PORT!),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_SESSION_DB ?? '0'),
-    });
+    this.redis = new Redis(process.env.REDIS_HEIMDALL_HOST ?? 'redis://localhost:6379');
   }
 
   async onModuleInit() {
