@@ -2,47 +2,54 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-type JwtAlg = 'RS256' | 'HS256';
-
-function readEnv(key: string): string {
-    const v = process.env[key];
-    return typeof v === 'string' ? v : '';
-}
-
+/**
+ * JWT Strategy for authentication in the API Gateway.
+ * 
+ * This strategy validates JWT tokens using RS256 algorithm with a public key.
+ * It extracts the token from the Authorization header and verifies its signature
+ * and expiration. The validated payload is attached to the request object as `req.user`.
+ * 
+ * @example
+ * // Usage in controller:
+ * @UseGuards(AuthGuard('jwt'))
+ * @Get('protected-route')
+ * getProtectedData() { ... }
+ */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor() {
-        const alg = (readEnv('JWT_ALG') || 'RS256') as JwtAlg;
-
-        let secretOrKey: string;
-        if (alg === 'RS256') {
-            const raw = readEnv('JWT_PUBLIC_KEY');
-            // Remplace les \n échappés par de vrais sauts de ligne
-            const pk = raw.replace(/\\n/g, '\n');
-            if (!pk) {
-                throw new Error('Missing JWT_PUBLIC_KEY (required for RS256).' +
-                    'Set JWT_ALG=HS256 and JWT_SECRET to use HS256 in dev.'
-                );
-            }
-            secretOrKey = pk;
-        } else {
-            const secret = readEnv('JWT_SECRET');
-            if (!secret) {
-                throw new Error('JWT_SECRET manquant (nécessaire pour HS256).');
-            }
-            secretOrKey = secret;
-        }
-
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey,                 
-            algorithms: [alg],           
-            ignoreExpiration: false,
-        });
+  /**
+   * Initializes the JWT strategy with configuration from environment variables.
+   * 
+   * @throws {Error} If JWT_PUBLIC_KEY is not defined in environment variables
+   * 
+   * @remarks
+   * - Requires JWT_PUBLIC_KEY environment variable containing the RSA public key
+   * - Automatically converts escaped newlines (\n) to actual newlines for proper key formatting
+   * - Uses RS256 algorithm for asymmetric encryption verification
+   * - Tokens are extracted from the Authorization header as Bearer tokens
+   * - Token expiration is validated (not ignored)
+   */
+  constructor() {
+    // Retrieve and format the public key from environment variables
+    const publicKey = process.env.JWT_PUBLIC_KEY?.replace(/\\n/g, '\n');
+    
+    if (!publicKey) {
+      throw new Error(
+        'Missing JWT_PUBLIC_KEY for RS256 verification in Gateway. ' +
+        'This key is required to validate JWT token signatures. ' +
+        'Ensure the public key is properly configured in your environment variables.'
+      );
     }
 
-    async validate(payload: any) {
-        // Payload validé → sera injecté dans req.user
-        return payload;
-    }
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: publicKey,
+      algorithms: ['RS256'],
+      ignoreExpiration: false,
+    });
+  }
+
+  async validate(payload: any) {
+    return payload; // will be attached to req.user
+  }
 }
