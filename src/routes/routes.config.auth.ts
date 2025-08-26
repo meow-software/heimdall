@@ -1,6 +1,6 @@
 import { RouteConfig } from "./routes";
 
-export const AUTH_SERVICE_HOST = process.env.AUTH_SERVICE_HOST ?? 'http://auth-service:3001';
+export const AUTH_SERVICE_HOST = process.env.AUTH_SERVICE_HOST ?? 'http://localhost:3001';
 
 export const authRouteConfig: RouteConfig[] = [
   { 

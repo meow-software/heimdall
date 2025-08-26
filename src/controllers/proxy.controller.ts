@@ -61,7 +61,6 @@ export class ProxyController {
         // Compile the routes from configuration for efficient matching
         this.compiled = compileRoutes(routes, !!parseInt(process.env.COMPILE_ROUTE_VERBOSE ?? '0'), !!parseInt(process.env.COMPILE_ROUTE_MUTE ?? '1'));
     }
-
     /**
      * Handles any incoming API request, finds a matching route,
      * applies guards and rate limiting, and proxies the request
@@ -81,6 +80,7 @@ export class ProxyController {
     ) {
         const incomingPath = req.path.replace(/^\/api/, '') || '/';
         const incomingMethod = req.method.toUpperCase();
+        console.log(this.compiled)
 
         // Find a matching route (by method + path)
         const found = this.compiled.find(
@@ -127,21 +127,49 @@ export class ProxyController {
             target: origin,
             changeOrigin: true,
             pathRewrite: (path: string, req: any) => {
+                // Keep the original pathname and query string
                 const qs = req.url && req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
                 return `${pathname}${qs}`;
             },
             on: {
-                proxyReq: (proxyReq: any) => {
-                    proxyReq.removeHeader('host');
+                proxyReq: (proxyReq, req, res) => {
+                    // If the body was already parsed by Express (e.g. express.json()),
+                    // we need to re-encode and forward it manually,
+                    // otherwise the backend will receive an empty body.
+                    if (req.body && Object.keys(req.body).length) {
+                        const contentType =
+                            proxyReq.getHeader('Content-Type') ||
+                            req.headers['content-type'] ||
+                            'application/json';
+
+                        let bodyData;
+                        if (contentType.includes('application/json')) {
+                            bodyData = JSON.stringify(req.body);
+                        } else if (contentType.includes('application/x-www-form-urlencoded')) {
+                            bodyData = JSON.stringify(req.body);
+                        } else {
+                            // For multipart/form-data or other content types,
+                            // it's better not to parse the body before proxying.
+                            return;
+                        }
+
+                        proxyReq.setHeader('Content-Type', contentType);
+                        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+                        proxyReq.write(bodyData);
+                    }
+                },
+                proxyRes: (proxyRes, req, res) => {
                 },
                 error: (err, req, res) => {
+                    // Handle proxy errors and return a 502 Bad Gateway
                     logger.error('Proxy error: ' + err.message);
                     res.writeHead(502, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'Bad Gateway', details: err.message }));
                 },
             },
         };
-        createProxyMiddleware(proxyOptions)(req, res, next);
+
+        return createProxyMiddleware(proxyOptions)(req, res, next);
     }
 
     /**
