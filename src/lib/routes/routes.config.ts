@@ -1,6 +1,4 @@
-import { JwtAuthGuard } from "src/auth/jwt/jwt-auth.guard";
 import { RouteConfig } from "./routes";
-import { AdminGuard } from "src/auth/guards/admin.guard";
 import { authRouteConfig } from "./routes.config.auth";
 
 export const PROJECT_SERVICE_HOST = 'http://project-service:3002';

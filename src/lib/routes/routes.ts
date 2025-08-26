@@ -1,13 +1,12 @@
 import { CanActivate } from '@nestjs/common';
 import { match as pathMatch, compile as pathCompile } from 'path-to-regexp';
-
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+import { Method } from 'axios';
 
 export type GuardClass = new (...args: any[]) => CanActivate;
 export type RouteGuardType = GuardClass | CanActivate
 
 export interface RouteConfig {
-    method: HttpMethod;
+    method: Method;
     path: string;                 // exposé par gateway (sans /api prefix)
     target: { // url interne avec mêmes params
         host: string;
